@@ -4,7 +4,7 @@ from Connections import connections as conns
 
 def ListOpenConn(user, host):
 
-  print "ssh","%s@%s"%(user,host),"/usr/bin/python","/home/novadaq/DAQ-gateway/NovaControlRoom/scripts/VNCPortForwarding.py","-l","all"
+  print("ssh","%s@%s"%(user,host),"/usr/bin/python","/home/novadaq/DAQ-gateway/NovaControlRoom/scripts/VNCPortForwarding.py","-l","all")
   # Could be the case that you don't have permissions to ssh
   try:
     return_val = subprocess.check_output(["ssh","%s@%s"%(user,host),"/usr/bin/python","/home/novadaq/DAQ-gateway/NovaControlRoom/scripts/VNCPortForwarding.py","-l","all"])
@@ -25,11 +25,11 @@ def ListOpenConn(user, host):
         openconns.append(con)
   
   if openconns:
-    print "Tunnels exist on %s for"%(host)
+    print("Tunnels exist on %s for"%(host))
     for con in openconns:
-      print con
+      print(con)
   else:
-    print "There are no open tunnels on %s"%(host)
+    print("There are no open tunnels on %s"%(host))
   return openconns
 
 

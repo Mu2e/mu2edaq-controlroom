@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Script to make the different data areas for the Mu2eDAQ setup
 #
 # We provide this script so that everything is consistant
@@ -18,7 +18,7 @@ detectorList = ["calo","trk","crv","stm","extmon","aux","other"]
 for thePrefix in prefixList :
     for theType in runtype :
         for theDet in detectorList :
-            thePath = "/" + thePrefix + "/" + theType + "/" + theDet "/"
+            thePath = "/" + thePrefix + "/" + theType + "/" + theDet + "/"
             try:
                 os.makedirs(thePath, exist_ok=True)
                 print(f"Directory '{thePath}' created successfully.")

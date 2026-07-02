@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -7,7 +7,7 @@ import errno
 
 def copyanything(src, dst):
     if os.path.exists(dst):
-        print "### WARNING! destination folder exists, skipping!\n"
+        print("### WARNING! destination folder exists, skipping!\n")
         return
     try:
         shutil.copytree(src, dst, symlinks=True)
@@ -20,7 +20,7 @@ def copyanything(src, dst):
 # get list of dirs from input file
 
 if len(sys.argv) != 4:
-    print "usage: copy_cvmfs_dir.py list.txt exclude_dir.txt dest_dir"
+    print("usage: copy_cvmfs_dir.py list.txt exclude_dir.txt dest_dir")
 
 input_list = sys.argv[1]
 
@@ -43,9 +43,9 @@ with open(input_list, 'r') as inlist:
             if i in isrc:
                 skip = True
         if skip:
-            print "skipping directory: {}".format(isrc)
+            print("skipping directory: {}".format(isrc))
             continue
         idest = os.path.join(dest_root_dir, os.path.relpath(isrc, '/cvmfs'))
         #idest = os.path.dirname(idest)
-        print "{} --> {}".format(isrc, idest)
+        print("{} --> {}".format(isrc, idest))
         copyanything(isrc, idest)

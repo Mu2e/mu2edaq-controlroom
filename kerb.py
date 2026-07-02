@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Script to dump out the kerberos principal and available credential caches
 import os
 import sys  
