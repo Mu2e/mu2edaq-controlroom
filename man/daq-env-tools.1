@@ -1,0 +1,126 @@
+.TH DAQ\-ENV\-TOOLS 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.SH NAME
+daq\-env\-tools \- capture and restore shell environment variables for DAQ processes
+.SH SYNOPSIS
+.B daq\-env\-tools.py
+.RB [ \-c | \-r ]
+[\fB\-i\fR \fIfile\fR]
+[\fB\-o\fR \fIfile\fR]
+[\fB\-\-config\fR \fIfile\fR]
+[\fB\-f\fR]
+[\fB\-v\fR]
+[\fB\-d\fR]
+[\fB\-s\fR]
+.SH DESCRIPTION
+.B daq\-env\-tools.py
+captures the complete set of environment variables from the running process
+into a JSON file, or restores a previously captured environment from such a
+file.
+.PP
+The primary use case is preserving a known-good DAQ software environment
+(e.g. one set up by
+.BR setup.sh ,
+.BR muse ,
+or
+.BR ups )
+so that it can be applied to a subsequent process or session without
+re-running the full setup chain.
+It also provides a helper function
+.RB ( store_restore_exec_command )
+that can save the current environment, switch to a stored environment,
+execute a command, and then restore the original environment — useful for
+running a single command in an isolated environment without spawning a
+sub-shell.
+.SH OPTIONS
+.TP
+.BR \-c ", " \-\-capture
+Dump all current environment variables to the output file (see
+.BR \-o ).
+If the output file already exists the command fails unless
+.B \-f
+is also given.
+.TP
+.BR \-r ", " \-\-restore
+Read environment variables from the input file (see
+.BR \-i )
+and apply them to the current process via
+.BR os.environ .
+The input file must exist.
+.TP
+.BI \-i " file" "\fR,\fP \-\-input " file
+Input filename used by
+.BR \-\-restore .
+Default:
+.IR default_env_in.json .
+.TP
+.BI \-o " file" "\fR,\fP \-\-output " file
+Output filename used by
+.BR \-\-capture .
+Default:
+.IR default_env_out.json .
+.TP
+.BI \-\-config " file"
+Path to an optional JSON configuration file.
+Default:
+.IR env_config.json .
+Currently parsed but not applied.
+.TP
+.BR \-f ", " \-\-force
+Allow
+.B \-\-capture
+to overwrite an existing output file.
+.TP
+.BR \-v ", " \-\-verbose
+Enable verbose output.
+.TP
+.BR \-d ", " \-\-debug
+Enable debug output.
+.TP
+.BR \-s ", " \-\-silent
+Suppress all output.
+.SH FILE FORMAT
+Environment files are JSON objects where each key is an environment
+variable name and each value is its string value:
+.PP
+.nf
+{
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "MU2E_SETUP_VERSION": "v10_00_00",
+    ...
+}
+.fi
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+.TP
+.B 1
+The input file specified by
+.B \-\-restore
+does not exist; or the output file specified by
+.B \-\-capture
+already exists and
+.B \-\-force
+was not given.
+.SH EXAMPLES
+.SS Capture the current environment
+.PP
+.nf
+source /path/to/mu2e_setup.sh
+python3 daq\-env\-tools.py \-\-capture \-\-output mu2e_env.json
+.fi
+.SS Restore a saved environment
+.PP
+.nf
+python3 daq\-env\-tools.py \-\-restore \-\-input mu2e_env.json
+.fi
+.SS Force-overwrite an existing capture
+.PP
+.nf
+python3 daq\-env\-tools.py \-\-capture \-\-output mu2e_env.json \-\-force
+.fi
+.SH SEE ALSO
+.BR env (1),
+.BR printenv (1)
+.SH AUTHORS
+Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.

@@ -1,0 +1,187 @@
+.TH LIST\-ISSUES\-MU2E 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.SH NAME
+list\-issues\-mu2e \- list open GitHub issues across all Mu2e organisation repositories
+.SH SYNOPSIS
+.B list_issues_mu2e.sh
+[\fB\-s\fR \fIorder\fR]
+[\fB\-o\fR \fIformat\fR]
+[\fB\-f\fR \fIpath\fR]
+[\fB\-r\fR \fIrepo\fR]
+[\fB\-l\fR \fIlabel\fR]
+[\fB\-j\fR \fIn\fR]
+.SH DESCRIPTION
+.B list_issues_mu2e.sh
+queries the GitHub API to enumerate every repository in the
+.B mu2e
+organisation (up to 4000 repositories), then fetches all open issues for each
+one.
+Issues are sorted by creation date and rendered in the chosen output format.
+.PP
+Repository discovery is performed automatically via
+.BR "gh repo list" ;
+no local clones are required.
+.PP
+Authentication is handled by the GitHub CLI.
+If
+.I ~/.credentials/github.token
+exists it is exported as
+.B GH_TOKEN
+before any API call.
+Otherwise the existing
+.B gh auth login
+session is used.
+.SH OPTIONS
+.TP
+.BR \-s ", " \-\-sort " " \fIorder\fR
+Sort issues by creation date.
+.I order
+must be
+.B newest
+(default, most\-recent first) or
+.BR oldest
+(oldest first).
+.TP
+.BR \-o ", " \-\-output " " \fIformat\fR
+Select the output format.
+.I format
+must be one of:
+.RS
+.TP
+.B terminal
+Colour\-formatted table written to standard output (default).
+Issues are presented as a flat chronological list, grouped under repository
+headers.
+.TP
+.B html
+Self\-contained HTML file.
+Issues are grouped by repository; every issue number and title is a clickable
+link to the corresponding GitHub page.
+Default path:
+.IR /tmp/mu2e\-issues.html .
+.TP
+.B pdf
+PDF with embedded hyperlinks.
+The HTML intermediate is converted to PDF using the first available engine:
+.BR pandoc (1)
+with
+.I weasyprint
+or
+.I wkhtmltopdf
+as backend, standalone
+.BR wkhtmltopdf (1),
+or headless Chromium/Chrome.
+Default path:
+.IR /tmp/mu2e\-issues.pdf .
+.TP
+.B browser
+HTML file is generated (as above) and then opened immediately in the system
+default browser via
+.BR open (1)
+(macOS) or
+.BR xdg\-open (1)
+(Linux).
+.RE
+.TP
+.BR \-f ", " \-\-file " " \fIpath\fR
+Override the default output file path for the
+.B html
+and
+.B pdf
+formats.
+.TP
+.BR \-r ", " \-\-repo " " \fIname\fR
+Restrict the query to a single repository.
+.I name
+may be given with or without the organisation prefix
+(e.g.\&
+.I Offline
+or
+.IR mu2e/Offline ).
+.TP
+.BR \-l ", " \-\-label " " \fIlabel\fR
+Filter issues by GitHub label name.
+.TP
+.BR \-j ", " \-\-jobs " " \fIn\fR
+Number of repositories to query in parallel (default: 4).
+Increasing this value speeds up large scans at the cost of higher API
+concurrency.
+.TP
+.BR \-h ", " \-\-help
+Print a usage summary and exit.
+.SH PREREQUISITES
+.TP
+.BR gh (1)
+GitHub CLI \(>= 2.0.
+.TP
+.BR jq (1)
+Command\-line JSON processor.
+.TP
+.I ~/.credentials/github.token
+.RI "(optional)"
+Personal access token with at least
+.B repo
+scope.
+Required only when no
+.B gh auth login
+session exists.
+.TP
+.BR pandoc (1) " or " wkhtmltopdf (1) " or Chromium"
+Required only for
+.B \-\-output pdf
+(any one of these is sufficient).
+.SH EXIT STATUS
+.TP
+.B 0
+Success (includes the case where no issues are found).
+.TP
+.B 1
+A prerequisite was not met, an argument was invalid, or PDF conversion failed.
+.SH EXAMPLES
+.PP
+Print all open issues sorted newest first (default):
+.PP
+.nf
+list_issues_mu2e.sh
+.fi
+.PP
+Print issues oldest first:
+.PP
+.nf
+list_issues_mu2e.sh --sort oldest
+.fi
+.PP
+Generate an HTML report:
+.PP
+.nf
+list_issues_mu2e.sh --output html --file ~/mu2e-issues.html
+.fi
+.PP
+Open a live HTML report in the browser:
+.PP
+.nf
+list_issues_mu2e.sh --output browser
+.fi
+.PP
+Generate a PDF:
+.PP
+.nf
+list_issues_mu2e.sh --output pdf --file ~/mu2e-issues.pdf
+.fi
+.PP
+Issues for the Offline repository only, sorted oldest first:
+.PP
+.nf
+list_issues_mu2e.sh --repo Offline --sort oldest
+.fi
+.PP
+Filter to issues labelled \(lqbug\(rq and open as HTML in browser:
+.PP
+.nf
+list_issues_mu2e.sh --label bug --output browser
+.fi
+.SH SEE ALSO
+.BR gh (1),
+.BR jq (1),
+.BR list\-pr\-mu2e (1)
+.SH AUTHORS
+Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.

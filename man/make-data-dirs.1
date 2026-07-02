@@ -1,0 +1,76 @@
+.TH MAKE\-DATA\-DIRS 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.SH NAME
+make\-data\-dirs \- create the standard Mu2e DAQ data directory hierarchy
+.SH SYNOPSIS
+.B make\-data\-dirs.sh
+.SH DESCRIPTION
+.B make\-data\-dirs.sh
+is a Python script (with a
+.I .sh
+extension) that creates the canonical directory tree used by the Mu2e DAQ
+system for storing run data.
+.PP
+The hierarchy is built by combining three orthogonal lists:
+.TP
+.B Data area prefixes
+.BR data ,\  data\-2 ,\  test\-data ,\  scratch
+.TP
+.B Run types
+.BR test ,\  prod ,\  commissioning ,\  study ,\  other
+.TP
+.B Detector subsystems
+.BR calo ,\  trk ,\  crv ,\  stm ,\  extmon ,\  aux ,\  other
+.PP
+Every combination is created as an absolute path of the form:
+.PP
+.nf
+/\fIprefix\fR/\fIruntype\fR/\fIdetector\fR/
+.fi
+.PP
+Directories that already exist are left unchanged
+.RB ( os.makedirs
+is called with
+.BR exist_ok=True ).
+Errors creating individual directories are printed and the script continues
+with the remaining paths.
+.PP
+Because paths begin with
+.BR / ,
+the script must be run as a user with write permission to the top-level
+directories (typically
+.B root
+or with appropriate group permissions on the DAQ cluster).
+.SH PREREQUISITES
+.TP
+.B Python 3
+Standard library only; no additional packages are required.
+.SH EXIT STATUS
+Always exits 0.
+Individual directory-creation failures are printed to standard output but
+do not stop the script or change the exit code.
+.SH EXAMPLES
+.PP
+Create the full data directory tree:
+.PP
+.nf
+sudo python3 make\-data\-dirs.sh
+.fi
+.PP
+Preview the paths without creating them (dry-run using Python):
+.PP
+.nf
+python3 \- <<'EOF'
+prefixList = ["data","data-2","test-data","scratch"]
+runtype    = ["test","prod","commissioning","study","other"]
+detList    = ["calo","trk","crv","stm","extmon","aux","other"]
+for p in prefixList:
+    for r in runtype:
+        for d in detList:
+            print(f"/{p}/{r}/{d}/")
+EOF
+.fi
+.SH SEE ALSO
+.BR mkdir (1),
+.BR install (1)
+.SH AUTHORS
+Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.

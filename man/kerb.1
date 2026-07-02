@@ -1,0 +1,72 @@
+.TH KERB 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.SH NAME
+kerb \- display the active Kerberos principal and all known credential caches
+.SH SYNOPSIS
+.B kerb.py
+.SH DESCRIPTION
+.B kerb.py
+is a diagnostic Python script that prints information about the current
+Kerberos state using the
+.B krb5
+and
+.B gssapi
+Python bindings.
+.PP
+On each run it:
+.IP 1. 3
+Prints the principal stored in the default credential cache.
+.IP 2. 3
+Prints the system's default Kerberos realm.
+.IP 3. 3
+Iterates over all credential caches known to the local Kerberos collection
+and prints the principal name for each cache that contains one.
+.PP
+The script is intended as a quick status check, equivalent to running
+.B klist \-A
+but using the Python
+.B krb5
+library directly rather than parsing command-line output.
+.SH PREREQUISITES
+.TP
+.B Python 3
+Standard library.
+.TP
+.B krb5
+Python Kerberos 5 bindings
+.RB ( pip\ install\ krb5 ).
+.TP
+.B gssapi
+Python GSSAPI bindings
+.RB ( pip\ install\ gssapi ).
+.SH EXIT STATUS
+.TP
+.B 0
+Normal exit.
+.TP
+.B non-zero
+A fatal exception from the
+.B krb5
+library; typically indicates that no Kerberos infrastructure is available.
+.SH EXAMPLES
+.PP
+Check which principal is active and what caches exist:
+.PP
+.nf
+python3 kerb.py
+.fi
+.PP
+Example output:
+.PP
+.nf
+mu2eshift/mu2edaq/mu2e.fnal.gov@FNAL.GOV
+FNAL.GOV
+b'mu2edaq/mu2edaq/mu2e.fnal.gov@FNAL.GOV'
+b'mu2eshift/mu2edaq/mu2e.fnal.gov@FNAL.GOV'
+.fi
+.SH SEE ALSO
+.BR klist (1),
+.BR kinit (1),
+.BR ticket\-manage (1),
+.BR mu2e\-krb\-cron (1)
+.SH AUTHORS
+Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.

@@ -1,0 +1,118 @@
+.TH START\-VNC\-TUNNELS\-MU2E 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.SH NAME
+start\-vnc\-tunnels\-mu2e \- open or close SSH tunnels for Mu2e DAQ VNC sessions
+.SH SYNOPSIS
+.B start_vnc_tunnels_mu2e.sh
+[\fB\-h\fR \fIhost\fR]
+[\fB\-u\fR \fIuser\fR]
+[\fB\-p\fR \fIstart_port\fR]
+[\fB\-n\fR \fInum_ports\fR]
+[\fB\-k\fR]
+.SH DESCRIPTION
+.B start_vnc_tunnels_mu2e.sh
+opens (or closes) SSH port-forward tunnels so that a VNC client on the
+local workstation can connect to VNC servers running inside the Mu2e DAQ
+network.
+.PP
+The script iterates over a contiguous range of TCP ports beginning at
+.I start_port
+and creates one
+.BR ssh (1)
+tunnel per port.
+Each tunnel is a background, multiplexed connection with a Unix-domain
+control socket at
+.IR /tmp/ssh\-ctrl\-<host>\-<port> ,
+allowing individual tunnels to be cleanly shut down with the
+.B \-k
+flag.
+.PP
+A valid Kerberos ticket is required before any tunnels are opened.
+The script calls
+.B klist \-\-test
+and exits with an error if no ticket is found.
+.SH OPTIONS
+.TP
+.BI \-h " host"
+Remote gateway host.
+Default:
+.BR mu2edaq\-gateway.fnal.gov .
+.TP
+.BI \-u " user"
+Remote username on the gateway host.
+Default:
+.BR mu2eshift .
+.TP
+.BI \-p " start_port"
+First port number in the forwarding range.
+Default:
+.BR 5951 .
+.TP
+.BI \-n " num_ports"
+Number of ports to forward.
+The range forwarded is
+.IR [start_port ,\  start_port + num_ports) .
+Default:
+.BR 5 .
+.TP
+.B \-k
+Kill (close) existing tunnels in the port range instead of opening new ones.
+Each tunnel's control socket is signalled with
+.BR "ssh \-O exit" .
+.SH REQUIREMENTS
+.TP
+.BR ssh (1)
+OpenSSH client with multiplexing support.
+.TP
+.BR klist (1)
+Used to verify that a valid Kerberos TGT exists before attempting SSH.
+.TP
+Kerberos ticket
+A valid, forwardable TGT is required.
+Obtain one with
+.BR GetTicket.sh (1)
+or
+.BR mu2e\-krb\-cron.py (1).
+.SH EXIT STATUS
+.TP
+.B 0
+All tunnels opened (or closed) successfully.
+.TP
+.B 1
+No valid Kerberos ticket found, or the
+.B \-k
+flag was used (the kill path always exits 1 to signal that tunnels were
+torn down rather than created).
+.SH EXAMPLES
+.SS Open tunnels with defaults
+.PP
+.nf
+bash start_vnc_tunnels_mu2e.sh
+.fi
+.SS Open tunnels on a specific host starting at port 5960
+.PP
+.nf
+bash start_vnc_tunnels_mu2e.sh \-h mu2edaq01.fnal.gov \-p 5960 \-n 3
+.fi
+.SS Close the default set of tunnels
+.PP
+.nf
+bash start_vnc_tunnels_mu2e.sh \-k
+.fi
+.SS Connect a VNC client after opening tunnels
+.PP
+With tunnels open on ports 5951\-5955, connect any VNC viewer to
+.IR localhost:5951 ,
+.IR localhost:5952 ,
+etc.
+.SH FILES
+.TP
+.I /tmp/ssh\-ctrl\-<host>\-<port>
+Multiplexed SSH control socket for each tunnel.
+Remove stale sockets manually if a tunnel did not exit cleanly.
+.SH SEE ALSO
+.BR ssh (1),
+.BR klist (1),
+.BR GetTicket (1),
+.BR mu2e\-krb\-cron (1)
+.SH AUTHORS
+Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.

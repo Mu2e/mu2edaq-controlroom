@@ -1,0 +1,60 @@
+.TH CLONE\-MU2E\-REPOS 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.SH NAME
+clone\-mu2e\-repos \- clone all repositories in the Mu2e GitHub organisation
+.SH SYNOPSIS
+.B clone_mu2e_repos.sh
+.SH DESCRIPTION
+.B clone_mu2e_repos.sh
+iterates over every repository in the
+.B mu2e
+GitHub organisation (up to 4000 repositories) and clones each one into a
+local directory hierarchy that mirrors the
+.I org/repo
+namespace.
+.PP
+The script is a thin wrapper around the GitHub CLI
+.RB ( gh ).
+It runs
+.B gh repo list
+to enumerate repositories and then
+.B gh repo clone
+for each one.
+The target clone path is set to
+.IR org/repo ,
+so all repositories land under a
+.B mu2e/
+subdirectory relative to the current working directory.
+.PP
+Repositories that have already been cloned are not re-cloned; the
+.B gh repo clone
+command will print an error for any destination that already exists, and the
+loop will continue with the next repository.
+.SH PREREQUISITES
+.TP
+.BR gh (1)
+GitHub CLI, authenticated via
+.B gh auth login
+or a
+.B GITHUB_TOKEN
+environment variable.
+.SH EXIT STATUS
+Exits with the status of the last
+.B gh repo clone
+invocation.
+Failures for individual repositories are printed but do not stop the loop.
+.SH EXAMPLES
+.PP
+Clone all Mu2e repositories into the current directory:
+.PP
+.nf
+cd ~/work
+bash clone_mu2e_repos.sh
+.fi
+.PP
+Subsequent runs will attempt (and fail harmlessly) to re-clone existing
+directories.
+.SH SEE ALSO
+.BR gh (1),
+.BR git\-clone (1)
+.SH AUTHORS
+Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.

@@ -1,0 +1,135 @@
+.TH TICKET\-MANAGE 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.SH NAME
+ticket\-manage \- graphical Kerberos ticket manager for the Mu2e DAQ control room
+.SH SYNOPSIS
+.B ticket\-manage.py
+.SH DESCRIPTION
+.B ticket\-manage.py
+is a Qt6-based GUI application for managing Kerberos tickets used by the
+Mu2e DAQ system.
+It displays the currently active principal, lists all credential caches
+known to the Kerberos collection, and provides buttons to switch between
+principals, obtain fresh tickets from keytabs, renew individual tickets,
+and bulk-renew all cached tickets.
+.PP
+A periodic timer fires once per hour and automatically renews the ticket
+selected in the principal drop-down, reducing the need for manual
+intervention during long shifts.
+.PP
+On startup the application reads principal and keytab metadata from
+.I kerb_princ.json
+(searched first in the current working directory, then in the script's own
+directory) and probes the live Kerberos collection via the
+.B krb5
+Python library.
+.SH INTERFACE
+.SS Current Kerberos Principal
+Label showing the principal currently active in the default credential
+cache.
+Updated when the active principal is switched.
+.SS Available Principals (drop-down)
+Lists every principal found in the Kerberos collection at startup.
+Select a principal here before clicking any action button.
+.SS Switch Tickets
+Calls
+.B kswitch \-p \fIprincipal\fR
+to make the selected principal the default credential cache.
+.SS Get New Ticket
+Reads the keytab path for the selected principal from
+.I kerb_princ.json
+and calls
+.BR "kinit \-kt" .
+Falls back to an interactive
+.B kinit
+if the principal is not found in the config file.
+.SS Renew Tickets
+Calls
+.B kinit \-R
+for the principal currently selected in the drop-down.
+.SS Renew All Tickets
+Calls
+.B kinit \-R
+for every principal in the list.
+Errors for individual principals are printed to stderr but do not stop the
+loop.
+.SH CONFIGURATION
+.B ticket\-manage.py
+searches for
+.I kerb_princ.json
+in the current working directory and then in the directory containing the
+script.
+The file must be present; the application exits with an error if it cannot
+be found.
+.PP
+Format of
+.IR kerb_princ.json :
+.PP
+.nf
+{
+    "user": ["mu2edaq", "mu2eshift", ...],
+    "principal": {
+        "mu2edaq":  "mu2edaq/mu2edaq/mu2e.fnal.gov@FNAL.GOV",
+        ...
+    },
+    "keytab\-master": "mu2e\-all.keytab",
+    "keytab": {
+        "mu2edaq": "mu2edaq.keytab",
+        ...
+    },
+    "keypath": "/path/to/keytabs"
+}
+.fi
+.PP
+.B keytab\-master
+names a combined keytab file used when obtaining fresh tickets via the
+.I Get New Ticket
+button.
+Individual per-principal keytab names under
+.B keytab
+are also recorded but the
+.B keytab\-master
+value takes precedence in the current implementation.
+.PP
+An optional
+.I ticket\-config.json
+file (searched on the same path) can override application defaults;
+its format is not yet defined.
+.SH PREREQUISITES
+.TP
+.B Python 3.9 or later
+.TP
+.B PyQt6
+Qt 6 Python bindings
+.RB ( pip\ install\ PyQt6 ).
+.TP
+.B krb5
+Python Kerberos 5 bindings
+.RB ( pip\ install\ krb5 ).
+.TP
+.BR kinit (1),\  kswitch (1)
+Must be on
+.BR PATH .
+.SH EXIT STATUS
+.TP
+.B 0
+Application closed normally.
+.TP
+.B 1
+.I kerb_princ.json
+was not found or could not be parsed.
+.SH FILES
+.TP
+.I kerb_princ.json
+Principal and keytab configuration file.
+.TP
+.I ticket\-config.json
+Optional application configuration file.
+.SH SEE ALSO
+.BR kinit (1),
+.BR kdestroy (1),
+.BR klist (1),
+.BR kswitch (1),
+.BR kerb (1),
+.BR mu2e\-krb\-cron (1)
+.SH AUTHORS
+Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.

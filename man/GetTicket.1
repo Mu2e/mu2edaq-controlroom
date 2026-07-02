@@ -1,0 +1,73 @@
+.TH GETTICKET 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.SH NAME
+GetTicket \- obtain a Kerberos ticket from a keytab file
+.SH SYNOPSIS
+.B GetTicket.sh
+.SH DESCRIPTION
+.B GetTicket.sh
+obtains a Kerberos ticket-granting ticket (TGT) for a service principal
+using a keytab file, without requiring interactive password entry.
+The principal name and keytab path are set as shell variables at the top of
+the script and should be edited to match the local site configuration.
+.PP
+The script selects the appropriate
+.B kinit
+invocation for the host operating system:
+.TP
+.B macOS (Apple_Terminal)
+.nf
+kinit \-f \-A \-k \-t <keytab> <principal>
+.fi
+.TP
+.B Linux
+.nf
+kinit \-5 \-F \-A \-k \-t <keytab> <principal>
+.fi
+.PP
+Both invocations produce a forwardable, addressless ticket, which is
+required for SSH port-forwarding workflows used in the Mu2e control room.
+.PP
+Output from
+.B kinit
+is suppressed; check the exit code or run
+.B klist
+afterwards to verify that a ticket was obtained.
+.SH CONFIGURATION
+The following variables are set near the top of the script and must be
+customised for the local site:
+.TP
+.B pname
+Full Kerberos principal name, e.g.
+.IR "mu2eshift/mu2edaq/mu2e.fnal.gov@FNAL.GOV" .
+.TP
+.B keytab
+Filename of the keytab (without path), e.g.
+.IR mu2eshift.keytab .
+.TP
+.B keytabpath
+Directory containing the keytab file.
+Default:
+.IR $HOME/.krb5 .
+.SH EXIT STATUS
+.TP
+.B 0
+Ticket was obtained successfully.
+.TP
+.B non-zero
+.B kinit
+failed; the credential cache was not updated.
+.SH EXAMPLES
+.PP
+Obtain a ticket using the defaults compiled into the script:
+.PP
+.nf
+bash GetTicket.sh
+klist
+.fi
+.SH SEE ALSO
+.BR kinit (1),
+.BR klist (1),
+.BR kdestroy (1),
+.BR mu2e\-krb\-cron (1)
+.SH AUTHORS
+Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.

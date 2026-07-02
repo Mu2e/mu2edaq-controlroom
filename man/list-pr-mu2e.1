@@ -1,0 +1,49 @@
+.TH LIST\-PR\-MU2E 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.SH NAME
+list\-pr\-mu2e \- list open pull requests across all Mu2e organisation repositories
+.SH SYNOPSIS
+.B list_pr_mu2e.sh
+.SH DESCRIPTION
+.B list_pr_mu2e.sh
+enumerates every repository in the
+.B mu2e
+GitHub organisation (up to 4000 repositories) and prints the open pull
+requests for each one.
+.PP
+For each repository discovered by
+.BR "gh repo list" ,
+it runs
+.B gh pr list
+and writes the results to standard output.
+Repositories with no open pull requests produce no output.
+.SH PREREQUISITES
+.TP
+.BR gh (1)
+GitHub CLI, authenticated via
+.B gh auth login
+or a
+.B GITHUB_TOKEN
+environment variable.
+.SH EXIT STATUS
+Exits with the status of the last
+.B gh pr list
+invocation.
+Individual repository failures print an error and continue.
+.SH EXAMPLES
+.PP
+List all open pull requests across the organisation:
+.PP
+.nf
+bash list_pr_mu2e.sh
+.fi
+.PP
+Filter to repositories with activity:
+.PP
+.nf
+bash list_pr_mu2e.sh | grep -v '^$'
+.fi
+.SH SEE ALSO
+.BR gh (1),
+.BR list\-issues\-mu2e (1)
+.SH AUTHORS
+Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.
