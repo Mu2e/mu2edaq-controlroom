@@ -1,256 +1,172 @@
-.TH MU2E\-KRB\-CRON 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.TH MU2E-KRB-CRON.PY 1 "2026-10-06" "mu2edaq-controlroom t01.00.00" "Mu2e DAQ Manual"
 .SH NAME
-mu2e\-krb\-cron \- headless Kerberos ticket lifecycle manager for cron
+mu2e\-krb\-cron.py \- keytab\-based Kerberos ticket keeper meant to run from cron (deprecated)
 .SH SYNOPSIS
-.B mu2e\-krb\-cron.py
-[\fB\-\-config\fR \fIFILE\fR]
-[\fB\-\-verbose\fR]
-[\fB\-\-silent\fR]
-[\fB\-\-dry\-run\fR]
+.B python3 mu2e\-krb\-cron.py
+.RB [ \-\-config
+.IR FILE ]
+.RB [ \-v | \-\-verbose ]
+.RB [ \-s | \-\-silent ]
+.RB [ \-n | \-\-dry\-run ]
 .SH DESCRIPTION
-.B mu2e\-krb\-cron.py
-is a headless Python script designed to be invoked from
-.BR cron (8)
-to manage Kerberos ticket lifecycle for Mu2e DAQ service principals.
+.B Deprecated.
+Ticket minting, renewal and cache management are provided by
+.B mu2edaq\-kerberos
+.RB ( get\-kerberos\-ticket (1),
+.BR ticket\-manager (1),
+.BR mu2edaq\-krb (1)),
+which keeps keytabs in Vault instead of on disk.
+That package has no unattended, cron\-style equivalent of this script;
+see
+.B BUGS
+before using this one.
 .PP
-On each run the script inspects the default Kerberos credential cache and
-takes one of the following actions:
+Each run looks only at the principal of the
+.I default
+credential cache (python\-krb5
+.BR cc_default )
+and does exactly one of:
 .TP
-.B No ticket present
-Calls
-.B kinit \-kt
-for every principal listed in the configuration, then exits.
+.B no ticket
+.B kinit
+from keytab for every configured principal, in order.
 .TP
-.B Ticket present but principal not in the configured list
-Destroys the current ticket cache with
+.B principal not in the configured list
 .BR kdestroy ,
-then calls
-.B kinit \-kt
-for every configured principal, then exits.
+then
+.B kinit
+from keytab for every configured principal.
 .TP
-.B Ticket present, principal allowed, lifetime above the renew threshold
-Logs that the ticket is healthy and exits without taking any action.
+.B allowed principal, at least renew_threshold_hours left
+nothing.
 .TP
-.B Ticket present, principal allowed, remaining lifetime below the renew threshold, and the renewable lifetime (renew\-till) is still above the renew\-till threshold
-Renews the ticket in place with
+.B less left, renew\-until more than renew_till_threshold_hours away
 .BR "kinit \-R" .
 .TP
-.B Ticket present, principal allowed, remaining lifetime below the renew threshold, and the renewable lifetime is also below the renew\-till threshold
-The ticket can no longer be renewed usefully; obtains a fresh ticket with
-.BR "kinit \-kt" .
-.TP
-.B After any ticket action
-Calls
-.BR kswitch (1)
-to make the principal mapped to the current OS user the active default
-credential cache (see
-.B user_principals
-in
-.BR CONFIGURATION ).
-.PP
-OS\-specific
+.B less left, renew\-until closer (or unknown)
+a fresh
 .B kinit
-flags are selected automatically:
-.RS
-.IP \(bu 2
-.BR macOS :
-.B kinit \-f \-A \-k \-t
-.I keytab principal
-.IP \(bu 2
-.BR Linux :
-.B kinit \-5 \-F \-A \-k \-t
-.I keytab principal
-.RE
+from that principal's keytab.
+.PP
+Every path then runs
+.B kswitch \-p
+with the principal that
+.B user_principals
+maps the current OS user to, if any.
+Keytab
+.B kinit
+uses
+.B \-f \-A \-k \-t
+on macOS and
+.B \-5 \-F \-A \-k \-t
+elsewhere.
+Expiry and renew\-until are parsed from plain
+.B klist
+output (MIT and Heimdal date formats).
 .SH OPTIONS
 .TP
 .BI \-\-config " FILE"
-Path to an external YAML configuration file.
-When supplied this file completely replaces the configuration embedded in the
-script.
-Any
+YAML file replacing the embedded
+.B DEFAULT_CONFIG
+(script lines 49\-83) entirely; missing
 .B settings
-keys omitted from the file receive their default values.
+keys default.
+The script's own comment says production runs should use no arguments.
 .TP
-.BR \-\-verbose ", " \-v
-Enable debug\-level log output.
-Produces additional lines showing thresholds, the detected principal, raw
-ticket times, and the exact commands that will be (or would be) run.
-Takes precedence over
+.BR \-v ", " \-\-verbose
+DEBUG logging; wins over
 .BR \-\-silent .
 .TP
-.BR \-\-silent ", " \-s
-Suppress all
-.B INFO
-messages.
-Only
-.B WARNING
-and above are written to stdout.
-Useful in cron entries where output should be mailed only on genuine
-problems.
+.BR \-s ", " \-\-silent
+WARNING and above only.
 .TP
-.BR \-\-dry\-run ", " \-n
-Parse configuration and evaluate ticket state normally, but log the intended
-.B kinit
-or
-.B kdestroy
-commands instead of executing them.
-No changes are made to any credential cache.
-Useful for testing configuration before deploying the cron entry.
-.SH CONFIGURATION
-The script contains an embedded YAML block (\fBDEFAULT_CONFIG\fR) that serves
-as its configuration when
-.B \-\-config
-is not given.
-Edit that block directly for site\-specific principals and keytab paths,
-or create a separate YAML file and pass it with
-.BR \-\-config .
-.SS Configuration file format
-.PP
-.nf
-settings:
-  renew_threshold_hours: 2          # renew if lifetime < this many hours
-  renew_till_threshold_hours: 24    # get new ticket if renew\-till < this many hours
-  log_file: /var/log/mu2e\-krb\-cron.log  # optional; omit to log to stdout only
-
-principals:
-  \- name: "principal/host/realm@REALM"
-    keytab: "/path/to/principal.keytab"
-  \- name: "other/host/realm@REALM"
-    keytab: "/path/to/other.keytab"
-
-user_principals:
-  operatoruser: "principal/host/realm@REALM"
-  anotheruser:  "other/host/realm@REALM"
-.fi
-.PP
-At least one entry under
-.B principals
-is required.
-Each entry must supply both
-.B name
-(the full Kerberos principal string) and
-.B keytab
-(an absolute path to the keytab file).
-.SS Settings
-.TP
-.B renew_threshold_hours
-Number of hours of remaining ticket lifetime below which the script will
-attempt to renew or replace the ticket.
-Default:
-.BR 2 .
-.TP
-.B renew_till_threshold_hours
-Number of hours of remaining
-.I renewable
-lifetime below which the script obtains a brand\-new ticket instead of
-renewing.
-Default:
-.BR 24 .
-.TP
-.B log_file
-Optional path to a file to which log output is appended in addition to
-stdout.
-If omitted, output goes to stdout only (suitable for capture by
-.BR cron ).
-.SS user_principals
-.PP
-An optional mapping from OS usernames to Kerberos principal strings.
-After all ticket management is complete the script calls
-.BR kswitch (1)
-with the principal that corresponds to the user running the script.
-If the current user is not present in the map, the
+.BR \-n ", " \-\-dry\-run
+log the
+.BR kinit ,
+.BR kdestroy ,
 .B kswitch
-step is skipped silently.
+commands instead of running them.
+.SH CONFIGURATION
+.EX
+settings:
+  renew_threshold_hours: 2
+  renew_till_threshold_hours: 24
+  log_file: /var/log/krb\-cron.log      # optional, appended
+principals:                             # required, at least one
+  \- name: "mu2edaq/mu2edaq/mu2e.fnal.gov@FNAL.GOV"
+    keytab: "/path/to/mu2edaq.keytab"
+user_principals:                        # optional: OS user \-> principal
+  mu2edaq: "mu2edaq/mu2edaq/mu2e.fnal.gov@FNAL.GOV"
+.EE
 .PP
-Example:
-.PP
-.nf
-user_principals:
-  mu2edaq:   "mu2edaq/mu2edaq/mu2e.fnal.gov@FNAL.GOV"
-  mu2eshift: "mu2eshift/mu2edaq/mu2e.fnal.gov@FNAL.GOV"
-.fi
-.SH EXIT STATUS
-.TP
-.B 0
-Normal exit — one of: ticket healthy, ticket renewed, new ticket obtained,
-unknown principal destroyed and replaced, or dry\-run completed.
-.TP
-.B 1
-Fatal error: configuration file not found, invalid YAML, no principals
-configured, or failure to initialise the krb5 context.
-.SH EXAMPLES
-.SS Dry\-run with verbose output
-.PP
-.nf
-python3 mu2e\-krb\-cron.py \-\-dry\-run \-\-verbose
-.fi
-.SS Run with an external config file
-.PP
-.nf
-python3 mu2e\-krb\-cron.py \-\-config /etc/mu2e/krb\-cron.yaml
-.fi
-.SS Crontab entry (every 30 minutes)
-.PP
-Add to the crontab with
-.BR crontab (1):
-.PP
-.nf
-*/30 * * * * /usr/bin/python3 /path/to/DAQ\-ControlRoom/mu2e\-krb\-cron.py
-.fi
-.PP
-To use an external config and capture errors by email:
-.PP
-.nf
-MAILTO=oncall@example.com
-*/30 * * * * /usr/bin/python3 /path/to/mu2e\-krb\-cron.py \e
-    \-\-config /etc/mu2e/krb\-cron.yaml
-.fi
+The embedded configuration lists six service principals with keytabs
+under
+.I /Users/anorman/Kerberos_Keytabs/Mu2e/
+and maps the OS user
+.B anorman
+to
+.BR anorman@FNAL.GOV ,
+which is not one of the six.
 .SH FILES
 .TP
-.I mu2e\-krb\-cron.py
-The script itself; contains the embedded default YAML configuration.
+.I /Users/anorman/Kerberos_Keytabs/Mu2e/*.keytab
+keytabs named by the embedded configuration; not checked for existence or
+permissions before use.
+.SH ENVIRONMENT
 .TP
-.I /Users/anorman/Kerberos_Keytabs/Mu2e/
-Default directory referenced by the embedded configuration for Mu2e keytab
-files.
-.SH DEPENDENCIES
-.TP
-.B Python
-3.9 or later.
-.TP
-.B krb5
-Python Kerberos 5 bindings
-.RB ( pip
-.BR "install krb5" ).
-.TP
-.B pyyaml
-YAML parser
-.RB ( pip
-.BR "install pyyaml" ).
-.TP
-.BR kinit (1),\  kdestroy (1),\  klist (1),\  kswitch (1)
-Must be present on
-.BR PATH .
-Provided by the system Kerberos installation (MIT Kerberos on Linux;
-Heimdal or MIT on macOS).
-.B klist
-is used to read current ticket expiry times.
+.B KRB5CCNAME
+honoured indirectly: it selects the default cache that python\-krb5,
+.BR klist ,
+.B kinit
+and
+.B kdestroy
+act on.
+.SH EXIT STATUS
+0 on every path that reaches a decision, including when
+.BR kinit ,
+.B kdestroy
+or
 .B kswitch
-is used to set the active credential cache after ticket management.
-.SH SEE ALSO
-.BR kinit (1),
-.BR kdestroy (1),
-.BR klist (1),
-.BR crontab (1),
-.BR cron (8),
-.BR krb5.conf (5)
-.SH AUTHORS
-Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.
+fails (failures are only logged);
+1 for a missing or invalid configuration, no principals, or a
+python\-krb5 context failure; 2 for a command\-line error.
+.SH EXAMPLES
+.EX
+python3 mu2e\-krb\-cron.py \-\-dry\-run \-\-verbose
+*/30 * * * * /usr/bin/python3 /path/to/mu2e\-krb\-cron.py \-\-silent
+.EE
 .SH BUGS
-Only the default credential cache is inspected; tickets in non\-default
-caches are not managed.
+A personal ticket in the default cache is destroyed: any principal outside
+.B principals
+triggers
+.BR kdestroy ,
+including the
+.B anorman@FNAL.GOV
+that
+.B user_principals
+asks to make default.
 .PP
-The script takes action on behalf of the single configured principal whose
-name matches the current default cache.
-If multiple allowed principals have active tickets in separate caches, only
-the default cache principal is evaluated for renewal.
+Only the default cache is maintained.
+After the first run the other configured principals' tickets are never
+renewed and lapse at the end of their lifetime.
+.PP
+Heimdal's
+.B klist
+(macOS) prints no "renew until" line, so renew\-until is unknown and every
+renewal becomes a fresh keytab
+.BR kinit .
+.PP
+With a non\-collection cache type (plain
+.BR FILE: ),
+each keytab
+.B kinit
+overwrites the previous one and only the last principal survives.
+.SH SEE ALSO
+.BR get\-kerberos\-ticket (1),
+.BR ticket\-manager (1),
+.BR mu2edaq\-krb (1),
+.BR ticket\-manage.py (1),
+.BR kinit (1),
+.BR kswitch (1)
+.SH AUTHOR
+Andrew Norman, Mu2e DAQ group, Fermilab.

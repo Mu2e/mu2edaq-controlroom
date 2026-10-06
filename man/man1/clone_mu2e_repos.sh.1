@@ -1,60 +1,45 @@
-.TH CLONE\-MU2E\-REPOS 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.TH CLONE_MU2E_REPOS.SH 1 "2026-10-06" "mu2edaq-controlroom t01.00.00" "Mu2e DAQ Manual"
 .SH NAME
-clone\-mu2e\-repos \- clone all repositories in the Mu2e GitHub organisation
+clone_mu2e_repos.sh \- clone every repository of the Mu2e GitHub organisation into ./Mu2e/<repo>
 .SH SYNOPSIS
-.B clone_mu2e_repos.sh
+.B bash bin/clone_mu2e_repos.sh
 .SH DESCRIPTION
-.B clone_mu2e_repos.sh
-iterates over every repository in the
-.B mu2e
-GitHub organisation (up to 4000 repositories) and clones each one into a
-local directory hierarchy that mirrors the
-.I org/repo
-namespace.
-.PP
-The script is a thin wrapper around the GitHub CLI
-.RB ( gh ).
-It runs
-.B gh repo list
-to enumerate repositories and then
+For each line of
+.B gh repo list mu2e \-\-limit 4000
+runs
 .B gh repo clone
-for each one.
-The target clone path is set to
-.IR org/repo ,
-so all repositories land under a
-.B mu2e/
-subdirectory relative to the current working directory.
+.I owner/repo owner/repo
+in the current directory, so clones land in
+.IR ./Mu2e/<repo> .
+An existing target directory makes that one clone fail and the loop
+continue.
+No shebang; run it with
+.BR bash .
 .PP
-Repositories that have already been cloned are not re-cloned; the
-.B gh repo clone
-command will print an error for any destination that already exists, and the
-loop will continue with the next repository.
-.SH PREREQUISITES
-.TP
-.BR gh (1)
-GitHub CLI, authenticated via
-.B gh auth login
-or a
-.B GITHUB_TOKEN
-environment variable.
+Not control\-room software.
+For the DAQ repositories, cloning the
+.B mu2edaq\-main
+superproject with
+.B \-\-recurse\-submodules
+gives the pinned set; nothing in the suite clones the whole organisation.
+.SH OPTIONS
+None; arguments are ignored.
+.SH ENVIRONMENT
+.BR gh 's
+authentication environment
+.RB ( GH_TOKEN ,
+.BR GH_HOST ).
 .SH EXIT STATUS
-Exits with the status of the last
+The status of the last
 .B gh repo clone
-invocation.
-Failures for individual repositories are printed but do not stop the loop.
+in the pipeline.
 .SH EXAMPLES
-.PP
-Clone all Mu2e repositories into the current directory:
-.PP
-.nf
-cd ~/work
-bash clone_mu2e_repos.sh
-.fi
-.PP
-Subsequent runs will attempt (and fail harmlessly) to re-clone existing
-directories.
+.EX
+mkdir ~/mu2e\-all && cd ~/mu2e\-all && bash /path/to/bin/clone_mu2e_repos.sh
+.EE
 .SH SEE ALSO
-.BR gh (1),
-.BR git\-clone (1)
-.SH AUTHORS
-Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.
+.BR list_issues_mu2e.sh (1),
+.BR list_pr_mu2e.sh (1),
+.BR gh (1)
+.SH AUTHOR
+Andrew Norman, Mu2e DAQ group, Fermilab.

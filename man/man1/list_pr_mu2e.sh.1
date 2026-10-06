@@ -1,49 +1,42 @@
-.TH LIST\-PR\-MU2E 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.TH LIST_PR_MU2E.SH 1 "2026-10-06" "mu2edaq-controlroom t01.00.00" "Mu2e DAQ Manual"
 .SH NAME
-list\-pr\-mu2e \- list open pull requests across all Mu2e organisation repositories
+list_pr_mu2e.sh \- print the open pull requests of every repository in the Mu2e GitHub organisation
 .SH SYNOPSIS
-.B list_pr_mu2e.sh
+.B bash bin/list_pr_mu2e.sh
 .SH DESCRIPTION
-.B list_pr_mu2e.sh
-enumerates every repository in the
-.B mu2e
-GitHub organisation (up to 4000 repositories) and prints the open pull
-requests for each one.
+Runs
+.B gh repo list mu2e \-\-limit 4000
+and, for each repository, prints
+.B gh pr list \-\-repo
+.I repo
+in
+.BR gh 's
+default table format, one block per repository with no header naming
+it when stdout is not a terminal.
+The file has no shebang and no executable\-specific setup; its header
+comment says it "clones" repositories, which it does not.
 .PP
-For each repository discovered by
-.BR "gh repo list" ,
-it runs
-.B gh pr list
-and writes the results to standard output.
-Repositories with no open pull requests produce no output.
-.SH PREREQUISITES
-.TP
-.BR gh (1)
-GitHub CLI, authenticated via
-.B gh auth login
-or a
-.B GITHUB_TOKEN
-environment variable.
+A GitHub housekeeping utility, not control\-room software; nothing else in
+the suite provides it.
+.SH OPTIONS
+None; arguments are ignored.
+.SH ENVIRONMENT
+.BR GH_TOKEN ,
+.B GH_HOST
+and the rest of
+.BR gh 's
+environment.
 .SH EXIT STATUS
-Exits with the status of the last
+The status of the last
 .B gh pr list
-invocation.
-Individual repository failures print an error and continue.
+in the pipeline.
 .SH EXAMPLES
-.PP
-List all open pull requests across the organisation:
-.PP
-.nf
-bash list_pr_mu2e.sh
-.fi
-.PP
-Filter to repositories with activity:
-.PP
-.nf
-bash list_pr_mu2e.sh | grep -v '^$'
-.fi
+.EX
+bash bin/list_pr_mu2e.sh | less
+.EE
 .SH SEE ALSO
-.BR gh (1),
-.BR list\-issues\-mu2e (1)
-.SH AUTHORS
-Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.
+.BR list_issues_mu2e.sh (1),
+.BR clone_mu2e_repos.sh (1),
+.BR gh (1)
+.SH AUTHOR
+Andrew Norman, Mu2e DAQ group, Fermilab.

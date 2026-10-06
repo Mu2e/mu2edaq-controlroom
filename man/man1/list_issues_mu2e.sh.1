@@ -1,14 +1,21 @@
-.TH LIST\-ISSUES\-MU2E 1 "April 2026" "DAQ-ControlRoom" "Mu2e DAQ Utilities"
+.TH LIST_ISSUES_MU2E.SH 1 "2026-10-06" "mu2edaq-controlroom t01.00.00" "Mu2e DAQ Manual"
 .SH NAME
-list\-issues\-mu2e \- list open GitHub issues across all Mu2e organisation repositories
+list_issues_mu2e.sh \- list open GitHub issues across every repository of the Mu2e organisation
 .SH SYNOPSIS
-.B list_issues_mu2e.sh
-[\fB\-s\fR \fIorder\fR]
-[\fB\-o\fR \fIformat\fR]
-[\fB\-f\fR \fIpath\fR]
-[\fB\-r\fR \fIrepo\fR]
-[\fB\-l\fR \fIlabel\fR]
-[\fB\-j\fR \fIn\fR]
+.B bin/list_issues_mu2e.sh
+.RB [ \-s | \-\-sort
+.BR newest | oldest ]
+.RB [ \-o | \-\-output
+.BR terminal | html | pdf | browser ]
+.RB [ \-f | \-\-file
+.IR path ]
+.RB [ \-r | \-\-repo
+.IR name ]
+.RB [ \-l | \-\-label
+.IR label ]
+.RB [ \-j | \-\-jobs
+.IR n ]
+.RB [ \-h | \-\-help ]
 .SH DESCRIPTION
 .B list_issues_mu2e.sh
 queries the GitHub API to enumerate every repository in the
@@ -16,6 +23,10 @@ queries the GitHub API to enumerate every repository in the
 organisation (up to 4000 repositories), then fetches all open issues for each
 one.
 Issues are sorted by creation date and rendered in the chosen output format.
+.PP
+This is a GitHub housekeeping utility, not control\-room software; nothing
+else in the suite provides it (see the package's
+.IR docs/ARCHITECTURE.md ).
 .PP
 Repository discovery is performed automatically via
 .BR "gh repo list" ;
@@ -108,27 +119,44 @@ concurrency.
 .TP
 .BR \-h ", " \-\-help
 Print a usage summary and exit.
-.SH PREREQUISITES
-.TP
-.BR gh (1)
-GitHub CLI \(>= 2.0.
-.TP
-.BR jq (1)
-Command\-line JSON processor.
+.SH FILES
 .TP
 .I ~/.credentials/github.token
-.RI "(optional)"
-Personal access token with at least
-.B repo
-scope.
-Required only when no
-.B gh auth login
-session exists.
+optional personal access token (scope
+.BR repo );
+used as
+.B GH_TOKEN
+if
+.B gh api user
+accepts it, else ignored with a warning.
 .TP
-.BR pandoc (1) " or " wkhtmltopdf (1) " or Chromium"
-Required only for
+.IR /tmp/mu2e\-issues.html ", " /tmp/mu2e\-issues.pdf
+default
+.B \-\-file
+for
+.BR html / browser
+and
+.BR pdf .
+.SH ENVIRONMENT
+.TP
+.B GH_TOKEN
+exported from the token file above when valid; otherwise
+.BR gh 's
+own authentication is used.
+.PP
+Requires
+.BR gh (1)
+and
+.BR jq (1);
 .B \-\-output pdf
-(any one of these is sufficient).
+also needs
+.BR pandoc (1)
+with weasyprint or wkhtmltopdf,
+.BR wkhtmltopdf (1),
+or
+.B google\-chrome
+/
+.BR chromium\-browser .
 .SH EXIT STATUS
 .TP
 .B 0
@@ -137,7 +165,6 @@ Success (includes the case where no issues are found).
 .B 1
 A prerequisite was not met, an argument was invalid, or PDF conversion failed.
 .SH EXAMPLES
-.PP
 Print all open issues sorted newest first (default):
 .PP
 .nf
@@ -179,9 +206,15 @@ Filter to issues labelled \(lqbug\(rq and open as HTML in browser:
 .nf
 list_issues_mu2e.sh --label bug --output browser
 .fi
+.SH BUGS
+A repository whose
+.B gh issue list
+call fails (rate limit, permission) is skipped silently, so the report
+can be incomplete without saying so.
 .SH SEE ALSO
+.BR list_pr_mu2e.sh (1),
+.BR clone_mu2e_repos.sh (1),
 .BR gh (1),
-.BR jq (1),
-.BR list\-pr\-mu2e (1)
-.SH AUTHORS
-Andrew Norman, Mu2e DAQ group, Fermi National Accelerator Laboratory.
+.BR jq (1)
+.SH AUTHOR
+Andrew Norman, Mu2e DAQ group, Fermilab.
