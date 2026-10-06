@@ -1,0 +1,130 @@
+schema: mega-review/1
+package: mu2edaq-controlroom
+tier: A
+group: control-room
+repo:
+  url: git@github.com:Mu2e/mu2edaq-controlroom.git
+  exists: true
+  issues_enabled: true
+doc_dir: docs
+summary: >
+  Legacy control-room script collection - keytab Kerberos ticket cron and
+  GUI, a gateway VNC tunnel script, GitHub-organisation utilities and DAQ
+  environment helpers - superseded by mu2edaq-kerberos and
+  mu2edaq-controlroom-setup and recommended for retirement
+languages: [python, bash, zsh]
+loc: 1498                      # *.py and bin/* at top level; Mu2eCR/ (vendored NOvA code) excluded
+
+runtime:
+  executables:
+    - name: mu2e-krb-cron.py
+      kind: script
+      man_page: man/man1/mu2e-krb-cron.py.1
+    - name: ticket-manage.py
+      kind: gui
+      man_page: man/man1/ticket-manage.py.1
+    - name: kerb.py
+      kind: cli
+      man_page: man/man1/kerb.py.1
+    - name: GetTicket.sh
+      kind: script
+      man_page: man/man1/GetTicket.sh.1
+    - name: start_vnc_tunnels_mu2e.sh
+      kind: script
+      man_page: man/man1/start_vnc_tunnels_mu2e.sh.1
+    - name: list_issues_mu2e.sh
+      kind: script
+      man_page: man/man1/list_issues_mu2e.sh.1
+    - name: list_pr_mu2e.sh
+      kind: script
+      man_page: man/man1/list_pr_mu2e.sh.1
+    - name: clone_mu2e_repos.sh
+      kind: script
+      man_page: man/man1/clone_mu2e_repos.sh.1
+    - name: make-data-dirs.py
+      kind: script
+      man_page: man/man1/make-data-dirs.py.1
+    - name: daq_env_tools.py
+      kind: cli
+      man_page: man/man1/daq_env_tools.py.1
+    - name: bootstrap.sh
+      kind: script
+      waiver: >
+        one-shot venv creation from requirements.txt, single --dev flag;
+        described in README.md and docs/ARCHITECTURE.md Components
+  services: []
+  ports: []                    # outbound ssh and HTTPS to GitHub only
+  config_files: [kerb_princ.json]   # plus the YAML embedded in mu2e-krb-cron.py:49-83
+  env_vars: []                 # TERM_PROGRAM (GetTicket.sh) and KRB5CCNAME (via libkrb5) only
+
+interactions:
+  depends_on: []               # imports, execs and connects to no suite package
+  depended_on_by: []
+  external: [mit-kerberos, heimdal-kerberos, python-krb5, pyqt6, openssh, gh, jq, cron]
+
+quality:
+  tests: {present: true, framework: unittest, count: 2}
+  ci: {present: false, workflows: []}
+  license: MIT
+  artifacts_clean: true
+
+findings:
+  - {id: CR-001, severity: S3, type: enhancement, title: "[deprecation] retire mu2edaq-controlroom once mu2edaq-kerberos covers unattended renewal and the seven references are repointed", issue: pending, fingerprint: "b1867f6d"}
+  - {id: CR-002, severity: S3, type: bug, title: "[krb] mu2e-krb-cron.py destroys any default ticket outside its list, including the personal principal it maps the operator to, and maintains only the default cache", issue: pending, fingerprint: "3acfaaa5"}
+  - {id: CR-003, severity: S3, type: bug, title: "[krb] keytab locations are hard-coded to one user's macOS home with a master keytab of all six identities; GetTicket.sh is configured for DUNE", issue: pending, fingerprint: "b48c31bd"}
+  - {id: CR-004, severity: S3, type: bug, title: "[env] daq_env_tools.py --capture writes the whole environment, credentials included, to stdout and a world-readable file; --restore cannot work", issue: pending, fingerprint: "0215629f"}
+  - {id: CR-005, severity: S4, type: bug, title: "[vnc] start_vnc_tunnels_mu2e.sh fails under MIT Kerberos, opens n+1 tunnels and keeps control sockets in /tmp", issue: pending, fingerprint: "991d68b7"}
+  - {id: CR-006, severity: S4, type: bug, title: "[deps] kerb.py imports gssapi, which requirements.txt does not install", issue: pending, fingerprint: "7a849feb"}
+  - {id: CR-007, severity: S4, type: documentation, title: "[man] man pages were flat, misnamed and described behaviour the scripts do not have", issue: pending, fingerprint: "dfced355"}
+  - {id: CR-008, severity: S4, type: enhancement, title: "[repo] Mu2eCR/ is a vendored NOvA CVS checkout, CVS metadata included, used by nothing", issue: pending, fingerprint: "3aca7540"}
+
+notes:
+  vendored: >
+    Mu2eCR/ (82 files, 36 CVS metadata) is a vendored NOvA checkout whose
+    scripts are not shipped executables of this package and get no man
+    pages; recommended for removal (CR-008).
+  deprecation: >
+    Status deprecated. Superseded on both axes: Kerberos by mu2edaq-kerberos
+    (ticket-manager, get-kerberos-ticket, krb-caches, mu2edaq-krb), VNC
+    tunnels by mu2edaq-controlroom-setup (crs-tunnel, crs-gui; its
+    tunnels.py:5 says it generalizes bin/start_vnc_tunnels_mu2e.sh). No
+    replacement for unattended cron renewal (mu2edaq-kerberos ships no
+    cron/systemd recipe; re-acquisition needs a Vault token), the GitHub
+    organisation utilities, make-data-dirs.py or daq_env_tools.py. Verdict:
+    retire after the preconditions in CR-001. Nothing deleted.
+  load_bearing_references: >
+    Seven documentation references name mu2e-krb-cron.py as the Kerberos
+    remedy: mu2edaq-controlroom-setup sshutil.py:22 and README.md:46;
+    mu2edaq-reverse-proxy README.md:279, doc/OPERATIONS.md:27,
+    doc/API.md:198; superproject DAQ-ControlRoom-Instructions.md:63 and
+    DAQ-ControlRoom-Testing.md:208. Structural: .gitmodules:13-15,
+    superproject README.md:51, testing/common.sh:31,120.
+  credential_review: >
+    Keytab paths hard-coded to /Users/anorman/Kerberos_Keytabs/Mu2e plus a
+    master keytab (CR-003); no keytab ever committed (history scan of added
+    file names, and -S scans for token and key markers, 2026-10-06). The
+    cron acts only on the default cache, never weakens cache permissions,
+    kdestroys foreign default tickets (CR-002), logs principal names and
+    keytab paths but no key material, and exits 0 on kinit failure.
+    daq_env_tools.py --capture is the package's real secret-to-log path
+    (CR-004).
+  dedup: >
+    gh issue list: #8 open (committed venv) is fixed on main by e5c1481 and
+    0c42280; a close-out comment is staged in docs/ISSUES-PENDING.md, no
+    new issue. #3-#6 closed; #5 overlaps CR-004 by token only.
+  issue_filing: >
+    GitHub writes not permitted (CONTRACT 9.1); all findings staged in
+    docs/ISSUES-PENDING.md, fingerprints
+    sha1("Mu2e/mu2edaq-controlroom:<path>:<rule_id>")[:8].
+  man_layout: >
+    Ten flat man/*.1 pages git mv'd to man/man1/ under the invoked command
+    names (commit 9e4bad3), then rewritten. CONTRACT 9.3 grep: only
+    README.md referenced the flat paths; updated in the README commit. No
+    test, CMake or packaging file references man/.
+  version: >
+    No package version; HEAD 076de7a carries the superproject tag
+    t01.00.00, used in the man-page headers.
+  tests: >
+    test_daq_env_tools.py, 2 unittest cases, pass under pytest (run from a
+    scratch copy because the test writes test_env.json into the working
+    directory). testing/common.sh runs pytest in "." for this package.
